@@ -34,6 +34,7 @@ def display_files_as_tree(file_paths):
 
     def print_tree(current_level, indent=""):
         keys = sorted(current_level.keys())
+        file_count = 0
         for i, key in enumerate(keys):
             if i == len(keys) - 1:
                 print(f"{indent}└── {key}")
@@ -41,10 +42,15 @@ def display_files_as_tree(file_paths):
             else:
                 print(f"{indent}├── {key}")
                 next_indent = indent + "│   "
-            print_tree(current_level[key], next_indent)
+            if current_level[key]:  # It's a directory
+                file_count += print_tree(current_level[key], next_indent)
+            else:  # It's a file
+                file_count += 1
+        return file_count
 
-    print_tree(tree)
-
+    total_files = print_tree(tree)
+    print(f"\nTotal number of files: {total_files}")
+    
 def main():
     repo_owner = input("Enter the GitHub repository owner: ")
     repo_name = input("Enter the GitHub repository name: ")
