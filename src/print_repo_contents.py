@@ -1,31 +1,41 @@
 import requests
 import time
-import argparse
 
-def get_all_files(repo_owner, repo_name, branch='main', token=None):
-    url = f'https://api.github.com/repos/{repo_owner}/{repo_name}/git/trees/{branch}?recursive=1'
-    headers = {'Authorization': f'token {token}'} if token else {}
+
+def get_all_files(repo_owner, repo_name, branch="main", token=None):
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/git/trees/" \
+          f"{branch}?recursive=1"
+    headers = {"Authorization": f"token {token}"} if token else {}
+
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        tree = response.json().get('tree', [])
-        file_paths = [item['path'] for item in tree if item['type'] == 'blob']
+        tree = response.json().get("tree", [])
+        file_paths = [item["path"] for item in tree if item["type"] == "blob"]
         return file_paths
-    elif response.status_code == 403 and 'X-RateLimit-Remaining' in response.headers and int(response.headers['X-RateLimit-Remaining']) == 0:
+    elif (
+        response.status_code == 403
+        and "X-RateLimit-Remaining" in response.headers
+        and int(response.headers["X-RateLimit-Remaining"]) == 0
+    ):
         # Handle rate limit
-        reset_time = int(response.headers['X-RateLimit-Reset'])
+        reset_time = int(response.headers["X-RateLimit-Reset"])
         wait_time = max(reset_time - time.time(), 0)
         print(f"Rate limit exceeded. Waiting for {wait_time} seconds.")
         time.sleep(wait_time)
         return get_all_files(repo_owner, repo_name, branch, token)
     else:
-        raise Exception(f"Failed to retrieve files: {response.status_code} - {response.text}")
+        raise Exception(
+            f"Failed to retrieve files: \n"
+            f"{response.status_code} - {response.text}"
+        )
+
 
 def display_files_as_tree(file_paths):
     file_paths.sort()
     tree = {}
     for path in file_paths:
-        parts = path.split('/')
+        parts = path.split("/")
         current_level = tree
         for part in parts:
             if part not in current_level:
@@ -50,11 +60,15 @@ def display_files_as_tree(file_paths):
 
     total_files = print_tree(tree)
     print(f"\nTotal number of files: {total_files}")
-    
+
+
 def main():
     repo_owner = input("Enter the GitHub repository owner: ")
     repo_name = input("Enter the GitHub repository name: ")
-    branch = input("Enter the branch to retrieve files from (default: main): ") or "main"
+    branch = (
+        input("Enter the branch to retrieve files from (default: main): ")
+        or "main"
+    )
     token = input("Enter your personal access token (optional): ")
 
     try:
@@ -62,6 +76,7 @@ def main():
         display_files_as_tree(file_paths)
     except Exception as e:
         print(e)
+
 
 if __name__ == "__main__":
     main()
